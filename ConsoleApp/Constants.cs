@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConsoleApp
+namespace Dynamixel
 {
     class Constants
     {
@@ -22,13 +22,10 @@ namespace ConsoleApp
         public const byte REAR_RIGTH_WHEEL = 3;
         public const byte REAR_LEFT_WHEEL = 1;
 
-        // Protocol version
-        
-        public const int TORQUE_ENABLE = 1;                   // Value for enabling the torque
-        public const int TORQUE_DISABLE = 0;                   // Value for disabling the torque
-        
-        public const int COMM_SUCCESS = 0;                   // Communication Success result value
-        public const int COMM_TX_FAIL = -1001;               // Communication Tx Failed
+        public const int TORQUE_ENABLE = 1;
+        public const int TORQUE_DISABLE = 0;
+        public const int COMM_SUCCESS = 0;
+        public const int COMM_TX_FAIL = -1001;
 
     }
 }

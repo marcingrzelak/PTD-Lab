@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using dynamixel_sdk;
 using System.IO;
+using Pelco;
+using Dynamixel;
 
 namespace ConsoleApp
 {
