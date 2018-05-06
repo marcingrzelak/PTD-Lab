@@ -77,8 +77,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Constants.cs" />
-    <Compile Include="dynamixel.cs" />
+    <Compile Include="Dynamixel.cs" />
+    <Compile Include="dynamixel_sdk.cs" />
     <Compile Include="Pelco.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
