@@ -23,11 +23,14 @@ namespace Pelco
         const byte DRIVE_BACK = 0x10;
     }
     class Commands
-    {
-        byte checksum;
-        void ChecksumCalc(byte pSTX, byte pCamAddr, byte pData1, byte pData2, byte pData3, byte pData4, byte pETX)
+    {        
+        byte ChecksumCalc(byte pSTX, byte pCamAddr, byte pData1, byte pData2, byte pData3, byte pData4, byte pETX)
         {
+            byte checksum;
             checksum = (byte)(pSTX ^ pCamAddr ^ pData1 ^ pData2 ^ pData3 ^ pData4 ^ pETX);
+            return checksum;
         }
+
+
     }
 }

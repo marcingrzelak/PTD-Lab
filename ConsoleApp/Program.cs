@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-using dynamixel_sdk;
 using System.IO;
 using Pelco;
 using Dynamixel;
@@ -20,17 +19,19 @@ namespace ConsoleApp
         #endregion
 
         public static int PortNum;
-        public static ushort WheelModeData;
+        public static ushort WheelModeData = 0;
+        public static int CurrentSpeed = 0;
+        public static int CurrentDirection = 0;
 
         static void Initialization()
         {
-            PortNum = dynamixel.portHandler(DEVICENAME);
-            dynamixel.packetHandler();
+            PortNum = DynamixelSDK.PortHandler(DEVICENAME);
+            DynamixelSDK.PacketHandler();
         }
 
         static void OpenPort()
         {
-            if (!dynamixel.openPort(PortNum))
+            if (!DynamixelSDK.OpenPort(PortNum))
                 throw new Exception("Failed to open the port!");
             else
                 Console.WriteLine("Succeeded to open the port!");
@@ -38,7 +39,7 @@ namespace ConsoleApp
 
         static void SetBaudRate()
         {
-            if (!dynamixel.setBaudRate(PortNum, BAUDRATE))
+            if (!DynamixelSDK.SetBaudRate(PortNum, BAUDRATE))
                 throw new Exception("Failed to change the baudrate!");
             else
                 Console.WriteLine("Succeeded to change the baudrate!");
@@ -49,15 +50,15 @@ namespace ConsoleApp
             int Result;
             byte Error;
 
-            dynamixel.write1ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_TORQUE_ENABLE, Dynamixel.Constants.TORQUE_ENABLE);
+            DynamixelSDK.Write1ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_TORQUE_ENABLE, Dynamixel.Constants.TORQUE_ENABLE);
 
-            if ((Result = dynamixel.getLastTxRxResult(PortNum, PROTOCOL_VERSION)) != Dynamixel.Constants.COMM_SUCCESS)
+            if ((Result = DynamixelSDK.GetLastTxRxResult(PortNum, PROTOCOL_VERSION)) != Dynamixel.Constants.COMM_SUCCESS)
             {
-                throw new Exception(Marshal.PtrToStringAnsi(dynamixel.getTxRxResult(PROTOCOL_VERSION, Result)));
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.GetTxRxResult(PROTOCOL_VERSION, Result)));
             }
-            else if ((Error = dynamixel.getLastRxPacketError(PortNum, PROTOCOL_VERSION)) != 0)
+            else if ((Error = DynamixelSDK.GetLastRxPacketError(PortNum, PROTOCOL_VERSION)) != 0)
             {
-                throw new Exception(Marshal.PtrToStringAnsi(dynamixel.getRxPacketError(PROTOCOL_VERSION, Error)));
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.GetRxPacketError(PROTOCOL_VERSION, Error)));
             }
             else
             {
@@ -68,13 +69,13 @@ namespace ConsoleApp
         static void EnableWheelMode(byte pID)
         {
             //todo: rzucanie wyjatkow
-            dynamixel.write2ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_CCW_ANGLE_LIMIT, WheelModeData);
+            DynamixelSDK.Write2ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_CCW_ANGLE_LIMIT, WheelModeData);
         }
 
         static void SetMovingSpeed(byte pID, ushort pMovingSpeed)
         {
             //todo: rzucanie wyjatkow
-            dynamixel.write2ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_MOVING_SPEED, pMovingSpeed);
+            DynamixelSDK.Write2ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_MOVING_SPEED, pMovingSpeed);
         }
 
         static void DisableDynamixelTorque(byte pID)
@@ -82,15 +83,15 @@ namespace ConsoleApp
             int Result;
             byte Error;
 
-            dynamixel.write1ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_TORQUE_ENABLE, Dynamixel.Constants.TORQUE_DISABLE);
+            DynamixelSDK.Write1ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_TORQUE_ENABLE, Dynamixel.Constants.TORQUE_DISABLE);
 
-            if ((Result = dynamixel.getLastTxRxResult(PortNum, PROTOCOL_VERSION)) != Dynamixel.Constants.COMM_SUCCESS)
+            if ((Result = DynamixelSDK.GetLastTxRxResult(PortNum, PROTOCOL_VERSION)) != Dynamixel.Constants.COMM_SUCCESS)
             {
-                throw new Exception(Marshal.PtrToStringAnsi(dynamixel.getTxRxResult(PROTOCOL_VERSION, Result)));
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.GetTxRxResult(PROTOCOL_VERSION, Result)));
             }
-            else if ((Error = dynamixel.getLastRxPacketError(PortNum, PROTOCOL_VERSION)) != 0)
+            else if ((Error = DynamixelSDK.GetLastRxPacketError(PortNum, PROTOCOL_VERSION)) != 0)
             {
-                throw new Exception(Marshal.PtrToStringAnsi(dynamixel.getRxPacketError(PROTOCOL_VERSION, Error)));
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.GetRxPacketError(PROTOCOL_VERSION, Error)));
             }
             else
             {
@@ -100,8 +101,10 @@ namespace ConsoleApp
 
         static void ClosePort()
         {
-            dynamixel.closePort(PortNum);
+            DynamixelSDK.ClosePort(PortNum);
         }
+
+
 
         static void Main(string[] args)
         {
@@ -149,8 +152,33 @@ namespace ConsoleApp
 
             while (true)
             {
-                if (Console.ReadKey().KeyChar == 0x1b)
+                if (Console.ReadKey().Key == ConsoleKey.Escape)
                     break;
+                                
+                else if (Console.ReadKey().Key == ConsoleKey.W)
+                {
+                    CurrentSpeed += 1;
+                }
+                
+                else if (Console.ReadKey().Key == ConsoleKey.S)
+                {
+                    CurrentSpeed -= 1;
+                }
+                                
+                else if (Console.ReadKey().Key == ConsoleKey.A)
+                {
+                    CurrentDirection += 1;
+                }
+                                
+                else if (Console.ReadKey().Key == ConsoleKey.D)
+                {
+                    CurrentDirection -= 0;
+                }
+
+                Console.Write("Speed: ");
+                Console.WriteLine(CurrentSpeed);
+                Console.Write("Direction: ");
+                Console.WriteLine(CurrentDirection);
             }
 
             try
