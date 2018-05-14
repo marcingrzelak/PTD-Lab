@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using Pelco;
 using Dynamixel;
+using System.IO.Ports;
 
 namespace ConsoleApp
 {
@@ -15,7 +16,7 @@ namespace ConsoleApp
         #region Settings
         public const byte PROTOCOL_VERSION = 1;
         public const int BAUDRATE = 1000000;
-        public const string DEVICENAME = "COM3";
+        public const string DEVICENAME = "COM6";
         #endregion
 
         public static int PortNum;
@@ -25,13 +26,13 @@ namespace ConsoleApp
 
         static void Initialization()
         {
-            PortNum = DynamixelSDK.PortHandler(DEVICENAME);
-            DynamixelSDK.PacketHandler();
+            PortNum = DynamixelSDK.portHandler(DEVICENAME);
+            DynamixelSDK.packetHandler();
         }
 
         static void OpenPort()
         {
-            if (!DynamixelSDK.OpenPort(PortNum))
+            if (!DynamixelSDK.openPort(PortNum))
                 throw new Exception("Failed to open the port!");
             else
                 Console.WriteLine("Succeeded to open the port!");
@@ -39,7 +40,7 @@ namespace ConsoleApp
 
         static void SetBaudRate()
         {
-            if (!DynamixelSDK.SetBaudRate(PortNum, BAUDRATE))
+            if (!DynamixelSDK.setBaudRate(PortNum, BAUDRATE))
                 throw new Exception("Failed to change the baudrate!");
             else
                 Console.WriteLine("Succeeded to change the baudrate!");
@@ -50,15 +51,15 @@ namespace ConsoleApp
             int Result;
             byte Error;
 
-            DynamixelSDK.Write1ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_TORQUE_ENABLE, Dynamixel.Constants.TORQUE_ENABLE);
+            DynamixelSDK.write1ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_TORQUE_ENABLE, Dynamixel.Constants.TORQUE_ENABLE);
 
-            if ((Result = DynamixelSDK.GetLastTxRxResult(PortNum, PROTOCOL_VERSION)) != Dynamixel.Constants.COMM_SUCCESS)
+            if ((Result = DynamixelSDK.getLastTxRxResult(PortNum, PROTOCOL_VERSION)) != Dynamixel.Constants.COMM_SUCCESS)
             {
-                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.GetTxRxResult(PROTOCOL_VERSION, Result)));
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.getTxRxResult(PROTOCOL_VERSION, Result)));
             }
-            else if ((Error = DynamixelSDK.GetLastRxPacketError(PortNum, PROTOCOL_VERSION)) != 0)
+            else if ((Error = DynamixelSDK.getLastRxPacketError(PortNum, PROTOCOL_VERSION)) != 0)
             {
-                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.GetRxPacketError(PROTOCOL_VERSION, Error)));
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.getRxPacketError(PROTOCOL_VERSION, Error)));
             }
             else
             {
@@ -69,13 +70,13 @@ namespace ConsoleApp
         static void EnableWheelMode(byte pID)
         {
             //todo: rzucanie wyjatkow
-            DynamixelSDK.Write2ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_CCW_ANGLE_LIMIT, WheelModeData);
+            DynamixelSDK.write2ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_CCW_ANGLE_LIMIT, WheelModeData);
         }
 
         static void SetMovingSpeed(byte pID, ushort pMovingSpeed)
         {
             //todo: rzucanie wyjatkow
-            DynamixelSDK.Write2ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_MOVING_SPEED, pMovingSpeed);
+            DynamixelSDK.write2ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_MOVING_SPEED, pMovingSpeed);
         }
 
         static void DisableDynamixelTorque(byte pID)
@@ -83,15 +84,15 @@ namespace ConsoleApp
             int Result;
             byte Error;
 
-            DynamixelSDK.Write1ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_TORQUE_ENABLE, Dynamixel.Constants.TORQUE_DISABLE);
+            DynamixelSDK.write1ByteTxRx(PortNum, PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_TORQUE_ENABLE, Dynamixel.Constants.TORQUE_DISABLE);
 
-            if ((Result = DynamixelSDK.GetLastTxRxResult(PortNum, PROTOCOL_VERSION)) != Dynamixel.Constants.COMM_SUCCESS)
+            if ((Result = DynamixelSDK.getLastTxRxResult(PortNum, PROTOCOL_VERSION)) != Dynamixel.Constants.COMM_SUCCESS)
             {
-                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.GetTxRxResult(PROTOCOL_VERSION, Result)));
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.getTxRxResult(PROTOCOL_VERSION, Result)));
             }
-            else if ((Error = DynamixelSDK.GetLastRxPacketError(PortNum, PROTOCOL_VERSION)) != 0)
+            else if ((Error = DynamixelSDK.getLastRxPacketError(PortNum, PROTOCOL_VERSION)) != 0)
             {
-                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.GetRxPacketError(PROTOCOL_VERSION, Error)));
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.getRxPacketError(PROTOCOL_VERSION, Error)));
             }
             else
             {
@@ -101,14 +102,22 @@ namespace ConsoleApp
 
         static void ClosePort()
         {
-            DynamixelSDK.ClosePort(PortNum);
+            DynamixelSDK.closePort(PortNum);
         }
-
+        
 
 
         static void Main(string[] args)
         {
-            Initialization();
+            try
+            {
+                Initialization();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            
             try
             {
                 OpenPort();

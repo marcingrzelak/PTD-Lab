@@ -28,27 +28,27 @@ namespace Dynamixel
 
         #region PortHandler
         [DllImport(DllPath)]
-        public static extern int PortHandler(string port_name);
+        public static extern int portHandler(string port_name);
 
         [DllImport(DllPath)]
-        public static extern bool OpenPort(int port_num);
+        public static extern bool openPort(int port_num);
         [DllImport(DllPath)]
-        public static extern void ClosePort(int port_num);
+        public static extern void closePort(int port_num);
         [DllImport(DllPath)]
-        public static extern void ClearPort(int port_num);
+        public static extern void clearPort(int port_num);
 
         [DllImport(DllPath)]
-        public static extern void SetPortName(int port_num, string port_name);
+        public static extern void setPortName(int port_num, string port_name);
         [DllImport(DllPath)]
-        public static extern string GetPortName(int port_num);
+        public static extern string getPortName(int port_num);
 
         [DllImport(DllPath)]
-        public static extern bool SetBaudRate(int port_num, int baudrate);
+        public static extern bool setBaudRate(int port_num, int baudrate);
         [DllImport(DllPath)]
-        public static extern int GetBaudRate(int port_num);
+        public static extern int getBaudRate(int port_num);
 
         [DllImport(DllPath)]
-        public static extern int ReadPort(int port_num, byte[] packet, int length);
+        public static extern int readPort(int port_num, byte[] packet, int length);
         [DllImport(DllPath)]
         public static extern int WritePort(int port_num, byte[] packet, int length);
 
@@ -62,21 +62,21 @@ namespace Dynamixel
 
         #region PacketHandler
         [DllImport(DllPath)]
-        public static extern void PacketHandler();
+        public static extern void packetHandler();
 
         [DllImport(DllPath)]
         public static extern void PrintTxRxResult(int protocol_version, int result);
         [DllImport(DllPath)]
-        public static extern IntPtr GetTxRxResult(int protocol_version, int result);
+        public static extern IntPtr getTxRxResult(int protocol_version, int result);
         [DllImport(DllPath)]
         public static extern void PrintRxPacketError(int protocol_version, byte error);
         [DllImport(DllPath)]
-        public static extern IntPtr GetRxPacketError(int protocol_version, byte error);
+        public static extern IntPtr getRxPacketError(int protocol_version, byte error);
 
         [DllImport(DllPath)]
-        public static extern int GetLastTxRxResult(int port_num, int protocol_version);
+        public static extern int getLastTxRxResult(int port_num, int protocol_version);
         [DllImport(DllPath)]
-        public static extern byte GetLastRxPacketError(int port_num, int protocol_version);
+        public static extern byte getLastRxPacketError(int port_num, int protocol_version);
 
         [DllImport(DllPath)]
         public static extern void SetDataWrite(int port_num, int protocol_version, UInt16 data_length, UInt16 data_pos, UInt32 data);
@@ -145,12 +145,12 @@ namespace Dynamixel
         [DllImport(DllPath)]
         public static extern void Write1ByteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, byte data);
         [DllImport(DllPath)]
-        public static extern void Write1ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address, byte data);
+        public static extern void write1ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address, byte data);
 
         [DllImport(DllPath)]
         public static extern void Write2ByteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, UInt16 data);
         [DllImport(DllPath)]
-        public static extern void Write2ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address, UInt16 data);
+        public static extern void write2ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address, UInt16 data);
 
         [DllImport(DllPath)]
         public static extern void Write4ByteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, UInt32 data);
