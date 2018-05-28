@@ -1,21 +1,3 @@
-/*******************************************************************************
-* Copyright 2017 ROBOTIS CO., LTD.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*******************************************************************************/
-
-/* Author: Ryu Woon Jung (Leon) */
-
 using System;
 using System.Runtime.InteropServices;
 
@@ -23,6 +5,24 @@ namespace Dynamixel
 {
     class DynamixelSDK
     {
+        /*******************************************************************************
+        * Copyright 2017 ROBOTIS CO., LTD.
+        *
+        * Licensed under the Apache License, Version 2.0 (the "License");
+        * you may not use this file except in compliance with the License.
+        * You may obtain a copy of the License at
+        *
+        *     http://www.apache.org/licenses/LICENSE-2.0
+        *
+        * Unless required by applicable law or agreed to in writing, software
+        * distributed under the License is distributed on an "AS IS" BASIS,
+        * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        * See the License for the specific language governing permissions and
+        * limitations under the License.
+        *******************************************************************************/
+
+        /* Author: Ryu Woon Jung (Leon) */
+
         const string DllPath = @"..\..\..\dxl_x64_c.dll";
         //const string DllPath = @"..\..\..\dxl_x86_c.dll";
 
@@ -50,14 +50,14 @@ namespace Dynamixel
         [DllImport(DllPath)]
         public static extern int readPort(int port_num, byte[] packet, int length);
         [DllImport(DllPath)]
-        public static extern int WritePort(int port_num, byte[] packet, int length);
+        public static extern int writePort(int port_num, byte[] packet, int length);
 
         [DllImport(DllPath)]
-        public static extern void SetPacketTimeout(int port_num, UInt16 packet_length);
+        public static extern void setPacketTimeout(int port_num, UInt16 packet_length);
         [DllImport(DllPath)]
-        public static extern void SetPacketTimeoutMSec(int port_num, double msec);
+        public static extern void setPacketTimeoutMSec(int port_num, double msec);
         [DllImport(DllPath)]
-        public static extern bool IsPacketTimeout(int port_num);
+        public static extern bool isPacketTimeout(int port_num);
         #endregion
 
         #region PacketHandler
@@ -65,11 +65,11 @@ namespace Dynamixel
         public static extern void packetHandler();
 
         [DllImport(DllPath)]
-        public static extern void PrintTxRxResult(int protocol_version, int result);
+        public static extern void printTxRxResult(int protocol_version, int result);
         [DllImport(DllPath)]
         public static extern IntPtr getTxRxResult(int protocol_version, int result);
         [DllImport(DllPath)]
-        public static extern void PrintRxPacketError(int protocol_version, byte error);
+        public static extern void printRxPacketError(int protocol_version, byte error);
         [DllImport(DllPath)]
         public static extern IntPtr getRxPacketError(int protocol_version, byte error);
 
@@ -79,186 +79,186 @@ namespace Dynamixel
         public static extern byte getLastRxPacketError(int port_num, int protocol_version);
 
         [DllImport(DllPath)]
-        public static extern void SetDataWrite(int port_num, int protocol_version, UInt16 data_length, UInt16 data_pos, UInt32 data);
+        public static extern void setDataWrite(int port_num, int protocol_version, UInt16 data_length, UInt16 data_pos, UInt32 data);
         [DllImport(DllPath)]
-        public static extern UInt32 GetDataRead(int port_num, int protocol_version, UInt16 data_length, UInt16 data_pos);
+        public static extern UInt32 getDataRead(int port_num, int protocol_version, UInt16 data_length, UInt16 data_pos);
 
         [DllImport(DllPath)]
-        public static extern void TxPacket(int port_num, int protocol_version);
+        public static extern void txPacket(int port_num, int protocol_version);
 
         [DllImport(DllPath)]
-        public static extern void RxPacket(int port_num, int protocol_version);
+        public static extern void rxPacket(int port_num, int protocol_version);
 
         [DllImport(DllPath)]
-        public static extern void TxRxPacket(int port_num, int protocol_version);
+        public static extern void txRxPacket(int port_num, int protocol_version);
 
         [DllImport(DllPath)]
-        public static extern void Ping(int port_num, int protocol_version, byte id);
+        public static extern void ping(int port_num, int protocol_version, byte id);
 
         [DllImport(DllPath)]
-        public static extern UInt16 PingGetModelNum(int port_num, int protocol_version, byte id);
+        public static extern UInt16 pingGetModelNum(int port_num, int protocol_version, byte id);
 
         [DllImport(DllPath)]
-        public static extern void BroadcastPing(int port_num, int protocol_version);
+        public static extern void broadcastPing(int port_num, int protocol_version);
         [DllImport(DllPath)]
-        public static extern bool GetBroadcastPingResult(int port_num, int protocol_version, int id);
+        public static extern bool getBroadcastPingResult(int port_num, int protocol_version, int id);
 
         [DllImport(DllPath)]
-        public static extern void Reboot(int port_num, int protocol_version, byte id);
+        public static extern void reboot(int port_num, int protocol_version, byte id);
 
         [DllImport(DllPath)]
-        public static extern void FactoryReset(int port_num, int protocol_version, byte id, byte option);
+        public static extern void factoryReset(int port_num, int protocol_version, byte id, byte option);
 
         [DllImport(DllPath)]
-        public static extern void ReadTx(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
+        public static extern void readTx(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
         [DllImport(DllPath)]
-        public static extern void ReadRx(int port_num, int protocol_version, UInt16 length);
+        public static extern void readRx(int port_num, int protocol_version, UInt16 length);
         [DllImport(DllPath)]
-        public static extern void ReadTxRx(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
+        public static extern void readTxRx(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
 
         [DllImport(DllPath)]
-        public static extern void Read1ByteTx(int port_num, int protocol_version, byte id, UInt16 address);
+        public static extern void read1ByteTx(int port_num, int protocol_version, byte id, UInt16 address);
         [DllImport(DllPath)]
-        public static extern byte Read1ByteRx(int port_num, int protocol_version);
+        public static extern byte read1ByteRx(int port_num, int protocol_version);
         [DllImport(DllPath)]
-        public static extern byte Read1ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address);
+        public static extern byte read1ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address);
 
         [DllImport(DllPath)]
-        public static extern void Read2ByteTx(int port_num, int protocol_version, byte id, UInt16 address);
+        public static extern void read2ByteTx(int port_num, int protocol_version, byte id, UInt16 address);
         [DllImport(DllPath)]
-        public static extern UInt16 Read2ByteRx(int port_num, int protocol_version);
+        public static extern UInt16 read2ByteRx(int port_num, int protocol_version);
         [DllImport(DllPath)]
-        public static extern UInt16 Read2ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address);
+        public static extern UInt16 read2ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address);
 
         [DllImport(DllPath)]
-        public static extern void Read4ByteTx(int port_num, int protocol_version, byte id, UInt16 address);
+        public static extern void read4ByteTx(int port_num, int protocol_version, byte id, UInt16 address);
         [DllImport(DllPath)]
-        public static extern UInt32 Read4ByteRx(int port_num, int protocol_version);
+        public static extern UInt32 read4ByteRx(int port_num, int protocol_version);
         [DllImport(DllPath)]
-        public static extern UInt32 Read4ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address);
+        public static extern UInt32 read4ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address);
 
         [DllImport(DllPath)]
-        public static extern void WriteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
+        public static extern void writeTxOnly(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
         [DllImport(DllPath)]
-        public static extern void WriteTxRx(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
+        public static extern void writeTxRx(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
 
         [DllImport(DllPath)]
-        public static extern void Write1ByteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, byte data);
+        public static extern void write1ByteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, byte data);
         [DllImport(DllPath)]
         public static extern void write1ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address, byte data);
 
         [DllImport(DllPath)]
-        public static extern void Write2ByteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, UInt16 data);
+        public static extern void write2ByteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, UInt16 data);
         [DllImport(DllPath)]
         public static extern void write2ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address, UInt16 data);
 
         [DllImport(DllPath)]
-        public static extern void Write4ByteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, UInt32 data);
+        public static extern void write4ByteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, UInt32 data);
         [DllImport(DllPath)]
-        public static extern void Write4ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address, UInt32 data);
+        public static extern void write4ByteTxRx(int port_num, int protocol_version, byte id, UInt16 address, UInt32 data);
 
         [DllImport(DllPath)]
-        public static extern void RegWriteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
+        public static extern void regWriteTxOnly(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
         [DllImport(DllPath)]
-        public static extern void RegWriteTxRx(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
+        public static extern void regWriteTxRx(int port_num, int protocol_version, byte id, UInt16 address, UInt16 length);
 
         [DllImport(DllPath)]
-        public static extern void SyncReadTx(int port_num, int protocol_version, UInt16 start_address, UInt16 data_length, UInt16 param_length);
+        public static extern void syncReadTx(int port_num, int protocol_version, UInt16 start_address, UInt16 data_length, UInt16 param_length);
         // syncReadRx   -> GroupSyncRead
         // syncReadTxRx -> GroupSyncRead
 
         [DllImport(DllPath)]
-        public static extern void SyncWriteTxOnly(int port_num, int protocol_version, UInt16 start_address, UInt16 data_length, UInt16 param_length);
+        public static extern void syncWriteTxOnly(int port_num, int protocol_version, UInt16 start_address, UInt16 data_length, UInt16 param_length);
 
         [DllImport(DllPath)]
-        public static extern void BulkReadTx(int port_num, int protocol_version, UInt16 param_length);
+        public static extern void bulkReadTx(int port_num, int protocol_version, UInt16 param_length);
         // bulkReadRx   -> GroupBulkRead
         // bulkReadTxRx -> GroupBulkRead
 
         [DllImport(DllPath)]
-        public static extern void BulkWriteTxOnly(int port_num, int protocol_version, UInt16 param_length);
+        public static extern void bulkWriteTxOnly(int port_num, int protocol_version, UInt16 param_length);
         #endregion
 
         #region GroupBulkRead
         [DllImport(DllPath)]
-        public static extern int GroupBulkRead(int port_num, int protocol_version);
+        public static extern int groupBulkRead(int port_num, int protocol_version);
 
         [DllImport(DllPath)]
-        public static extern bool GroupBulkReadAddParam(int group_num, byte id, UInt16 start_address, UInt16 data_length);
+        public static extern bool groupBulkReadAddParam(int group_num, byte id, UInt16 start_address, UInt16 data_length);
         [DllImport(DllPath)]
-        public static extern void GroupBulkReadRemoveParam(int group_num, byte id);
+        public static extern void groupBulkReadRemoveParam(int group_num, byte id);
         [DllImport(DllPath)]
-        public static extern void GroupBulkReadClearParam(int group_num);
+        public static extern void groupBulkReadClearParam(int group_num);
 
         [DllImport(DllPath)]
-        public static extern void GroupBulkReadTxPacket(int group_num);
+        public static extern void groupBulkReadTxPacket(int group_num);
         [DllImport(DllPath)]
-        public static extern void GroupBulkReadRxPacket(int group_num);
+        public static extern void groupBulkReadRxPacket(int group_num);
         [DllImport(DllPath)]
-        public static extern void GroupBulkReadTxRxPacket(int group_num);
+        public static extern void groupBulkReadTxRxPacket(int group_num);
 
         [DllImport(DllPath)]
-        public static extern bool GroupBulkReadIsAvailable(int group_num, byte id, UInt16 address, UInt16 data_length);
+        public static extern bool groupBulkReadIsAvailable(int group_num, byte id, UInt16 address, UInt16 data_length);
         [DllImport(DllPath)]
-        public static extern UInt32 GroupBulkReadGetData(int group_num, byte id, UInt16 address, UInt16 data_length);
+        public static extern UInt32 groupBulkReadGetData(int group_num, byte id, UInt16 address, UInt16 data_length);
         #endregion
 
         #region GroupBulkWrite
         [DllImport(DllPath)]
-        public static extern int GroupBulkWrite(int port_num, int protocol_version);
+        public static extern int groupBulkWrite(int port_num, int protocol_version);
 
         [DllImport(DllPath)]
-        public static extern bool GroupBulkWriteAddParam(int group_num, byte id, UInt16 start_address, UInt16 data_length, UInt32 data, UInt16 input_length);
+        public static extern bool groupBulkWriteAddParam(int group_num, byte id, UInt16 start_address, UInt16 data_length, UInt32 data, UInt16 input_length);
         [DllImport(DllPath)]
-        public static extern void GroupBulkWriteRemoveParam(int group_num, byte id);
+        public static extern void groupBulkWriteRemoveParam(int group_num, byte id);
         [DllImport(DllPath)]
-        public static extern bool GroupBulkWriteChangeParam(int group_num, byte id, UInt16 start_address, UInt16 data_length, UInt32 data, UInt16 input_length, UInt16 data_pos);
+        public static extern bool groupBulkWriteChangeParam(int group_num, byte id, UInt16 start_address, UInt16 data_length, UInt32 data, UInt16 input_length, UInt16 data_pos);
         [DllImport(DllPath)]
-        public static extern void GroupBulkWriteClearParam(int group_num);
+        public static extern void groupBulkWriteClearParam(int group_num);
 
         [DllImport(DllPath)]
-        public static extern void GroupBulkWriteTxPacket(int group_num);
+        public static extern void groupBulkWriteTxPacket(int group_num);
         #endregion
 
         #region GroupSyncRead
         [DllImport(DllPath)]
-        public static extern int GroupSyncRead(int port_num, int protocol_version, UInt16 start_address, UInt16 data_length);
+        public static extern int groupSyncRead(int port_num, int protocol_version, UInt16 start_address, UInt16 data_length);
 
         [DllImport(DllPath)]
-        public static extern bool GroupSyncReadAddParam(int group_num, byte id);
+        public static extern bool groupSyncReadAddParam(int group_num, byte id);
         [DllImport(DllPath)]
-        public static extern void GroupSyncReadRemoveParam(int group_num, byte id);
+        public static extern void groupSyncReadRemoveParam(int group_num, byte id);
         [DllImport(DllPath)]
-        public static extern void GroupSyncReadClearParam(int group_num);
+        public static extern void groupSyncReadClearParam(int group_num);
 
         [DllImport(DllPath)]
-        public static extern void GroupSyncReadTxPacket(int group_num);
+        public static extern void groupSyncReadTxPacket(int group_num);
         [DllImport(DllPath)]
-        public static extern void GroupSyncReadRxPacket(int group_num);
+        public static extern void groupSyncReadRxPacket(int group_num);
         [DllImport(DllPath)]
-        public static extern void GroupSyncReadTxRxPacket(int group_num);
+        public static extern void groupSyncReadTxRxPacket(int group_num);
 
         [DllImport(DllPath)]
-        public static extern bool GroupSyncReadIsAvailable(int group_num, byte id, UInt16 address, UInt16 data_length);
+        public static extern bool groupSyncReadIsAvailable(int group_num, byte id, UInt16 address, UInt16 data_length);
         [DllImport(DllPath)]
-        public static extern UInt32 GroupSyncReadGetData(int group_num, byte id, UInt16 address, UInt16 data_length);
+        public static extern UInt32 groupSyncReadGetData(int group_num, byte id, UInt16 address, UInt16 data_length);
         #endregion
 
         #region GroupSyncWrite
         [DllImport(DllPath)]
-        public static extern int GroupSyncWrite(int port_num, int protocol_version, UInt16 start_address, UInt16 data_length);
+        public static extern int groupSyncWrite(int port_num, int protocol_version, UInt16 start_address, UInt16 data_length);
 
         [DllImport(DllPath)]
-        public static extern bool GroupSyncWriteAddParam(int group_num, byte id, UInt32 data, UInt16 data_length);
+        public static extern bool groupSyncWriteAddParam(int group_num, byte id, UInt32 data, UInt16 data_length);
         [DllImport(DllPath)]
-        public static extern void GroupSyncWriteRemoveParam(int group_num, byte id);
+        public static extern void groupSyncWriteRemoveParam(int group_num, byte id);
         [DllImport(DllPath)]
-        public static extern bool GroupSyncWriteChangeParam(int group_num, byte id, UInt32 data, UInt16 data_length, UInt16 data_pos);
+        public static extern bool groupSyncWriteChangeParam(int group_num, byte id, UInt32 data, UInt16 data_length, UInt16 data_pos);
         [DllImport(DllPath)]
-        public static extern void GroupSyncWriteClearParam(int group_num);
+        public static extern void groupSyncWriteClearParam(int group_num);
 
         [DllImport(DllPath)]
-        public static extern void GroupSyncWriteTxPacket(int group_num);
+        public static extern void groupSyncWriteTxPacket(int group_num);
         #endregion
     }
 
