@@ -27,6 +27,13 @@ namespace ConsoleApp
         public const ushort DYNAMIXEL_BACK_SPEED = 1024;
         public const int DYNAMIXEL_STOP_SPEED_BACK = 1024;
 
+        public const ushort DYNAMIXEL_RIGHT_ARM_MIN_POSITION = 0;
+        public const ushort DYNAMIXEL_RIGHT_ARM_MAX_POSITION = 0;
+        public const ushort DYNAMIXEL_LEFT_ARM_MIN_POSITION = 0;
+        public const ushort DYNAMIXEL_LEFT_ARM_MAX_POSITION = 0;
+        public const ushort DYNAMIXEL_TILT_ARM_MIN_POSITION = 0;
+        public const ushort DYNAMIXEL_TILT_ARM_MAX_POSITION = 0;
+
         public static int DynamixelPortNum;
         public static ushort DynamixelWheelModeData = 0;
         public static int DynamixelCurrentSpeed = 0;
@@ -40,8 +47,8 @@ namespace ConsoleApp
         public static SerialPort serialPort = new SerialPort(PelcoSerialPort);
         public static PacketD packet = new PacketD();
         public static List<PacketD> packets = new List<PacketD>();
-        public static Stopwatch stopwatch = new Stopwatch();
-        public static DateTime date = DateTime.Now;
+        public static DateTime dateWheels = DateTime.Now;
+        public static DateTime dateGrasper = DateTime.Now;
 
         #region Dynamixel
 
@@ -84,14 +91,14 @@ namespace ConsoleApp
             }
             else
             {
-                Console.WriteLine("Dynamixel has been successfully connected");
+                Console.Write("Dynamixel" + pID + " has been successfully connected");
             }
         }
 
         static void DynamixelEnableWheelMode(byte pID)
         {
             //todo: rzucanie wyjatkow
-            DynamixelSDK.write2ByteTxRx(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_CCW_ANGLE_LIMIT, DynamixelWheelModeData);
+            DynamixelSDK.write2ByteTxRx(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_CCW_ANGLE_LIMIT_L, DynamixelWheelModeData);
         }
 
         static void DynamixelSetMovingSpeed(byte pID, ushort pMovingSpeed)
@@ -132,6 +139,29 @@ namespace ConsoleApp
             DynamixelSetMovingSpeed(Constants.FRONT_LEFT_WHEEL, 0);
             DynamixelSetMovingSpeed(Constants.REAR_RIGHT_WHEEL, 0);
             DynamixelSetMovingSpeed(Constants.REAR_LEFT_WHEEL, 0);
+        }
+
+        private static void DynamixelStopGrasper()
+        {
+            DynamixelSetMovingSpeed(Constants.RIGHT_ARM, 0);
+            DynamixelSetMovingSpeed(Constants.LEFT_ARM, 0);
+            DynamixelSetMovingSpeed(Constants.TILT_ARM, 0);
+        }
+
+        private static void DynamixelWriteGoalPosition(byte pID, ushort pGoalPosition)
+        {
+            int Result;
+            byte Error;
+
+            DynamixelSDK.write2ByteTxRx(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION, pID, Constants.ADDR_GOAL_POSITION_L, pGoalPosition);
+            if ((Result = DynamixelSDK.getLastTxRxResult(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION)) != Constants.COMM_SUCCESS)
+            {
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.getTxRxResult(DYNAMIXEL_PROTOCOL_VERSION, Result)));
+            }
+            else if ((Error = DynamixelSDK.getLastRxPacketError(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION)) != 0)
+            {
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.getRxPacketError(DYNAMIXEL_PROTOCOL_VERSION, Error)));
+            }
         }
 
         #endregion
@@ -210,7 +240,7 @@ namespace ConsoleApp
             {
                 if (packets[0].Sync == ConstantsD.SYNC)
                 {
-                    if (packets[0].Address == ConstantsD.ADDR_1)
+                    if (packets[0].Address == ConstantsD.ADDR_1) //sterowanie kolami
                     {
                         if (packets[0].Command2 == ConstantsD.DRIVE_AHEAD)
                         {
@@ -234,7 +264,27 @@ namespace ConsoleApp
                             DynamixelSpeed = SpeedByteToNumberBack(packets[0].Data1);
                             CarTurn(DynamixelSpeed);
                         }
-                        date = DateTime.Now;
+                        dateWheels = DateTime.Now;
+                    }
+                    else if (packets[0].Address == ConstantsD.ADDR_2) //sterowanie chwytakiem
+                    {
+                        if (packets[0].Command2 == ConstantsD.GRASPER_UP)
+                        {
+
+                        }
+                        else if (packets[0].Command2 == ConstantsD.GRASPER_DOWN)
+                        {
+
+                        }
+                        else if (packets[0].Command2 == ConstantsD.OPEN_GRASPER)
+                        {
+
+                        }
+                        else if (packets[0].Command2 == ConstantsD.CLOSE_GRASPER)
+                        {
+
+                        }
+                        dateGrasper = DateTime.Now;
                     }
                 }
                 packets.RemoveAt(0);
@@ -303,8 +353,8 @@ namespace ConsoleApp
 
         static void Main(string[] args)
         {
-            int flag = 0;
-            TimeSpan time;
+            int isBytesToRead = 0;
+            TimeSpan timeWheels, timeGrasper;
             try
             {
                 DynamixelInitialization();
@@ -343,7 +393,9 @@ namespace ConsoleApp
                 DynamixelEnableTorque(Dynamixel.Constants.FRONT_LEFT_WHEEL);
                 DynamixelEnableTorque(Dynamixel.Constants.REAR_RIGHT_WHEEL);
                 DynamixelEnableTorque(Dynamixel.Constants.REAR_LEFT_WHEEL);
-
+                DynamixelEnableTorque(Dynamixel.Constants.RIGHT_ARM);
+                DynamixelEnableTorque(Dynamixel.Constants.LEFT_ARM);
+                DynamixelEnableTorque(Dynamixel.Constants.TILT_ARM);
             }
             catch (Exception ex)
             {
@@ -365,13 +417,18 @@ namespace ConsoleApp
 
             while (true)
             {
-                flag = serialPort.BytesToRead;
-                if (flag == 0)
+                isBytesToRead = serialPort.BytesToRead;
+                if (isBytesToRead == 0)
                 {
-                    time = DateTime.Now - date;
-                    if (time.Milliseconds > 210)
+                    timeWheels = DateTime.Now - dateWheels;
+                    if (timeWheels.Milliseconds > 210)
                     {
                         DynamixelStopWheels();
+                    }
+                    timeGrasper = DateTime.Now - dateGrasper;
+                    if (timeGrasper.Milliseconds > 210)
+                    {
+                        DynamixelStopGrasper();
                     }
                 }
                 else

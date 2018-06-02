@@ -264,10 +264,14 @@ namespace Dynamixel
 
     class Constants
     {
-        public const byte ADDR_CCW_ANGLE_LIMIT = 8;
+        public const byte ADDR_CW_ANGLE_LIMIT_L = 6;
+        public const byte ADDR_CW_ANGLE_LIMIT_H = 7;
+        public const byte ADDR_CCW_ANGLE_LIMIT_L = 8;
+        public const byte ADDR_CCW_ANGLE_LIMIT_H = 9;
         public const byte ADDR_TORQUE_ENABLE = 24;
         public const byte ADDR_LED_ENABLE = 25;
-        public const byte ADDR_GOAL_POSITION = 30;
+        public const byte ADDR_GOAL_POSITION_L = 30;
+        public const byte ADDR_GOAL_POSITION_H = 31;
         public const byte ADDR_MOVING_SPEED = 32;
         public const byte ADDR_TORQUE_LIMIT = 34;
         public const byte ADDR_PRESENT_POSITION = 36;
@@ -278,6 +282,9 @@ namespace Dynamixel
         public const byte FRONT_LEFT_WHEEL = 2;
         public const byte REAR_RIGHT_WHEEL = 3;
         public const byte REAR_LEFT_WHEEL = 1;
+        public const byte TILT_ARM = 5;
+        public const byte RIGHT_ARM = 6;
+        public const byte LEFT_ARM = 7;
 
         public const int TORQUE_ENABLE = 1;
         public const int TORQUE_DISABLE = 0;
