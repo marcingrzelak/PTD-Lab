@@ -1,37 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO.Ports;
-
-namespace Pelco
+﻿namespace Pelco
 {
-    class ConstantsP
-    {
-        const byte STX = 0xA0;
-        const byte ETX = 0xAF;
-        const byte CAM_ADDR_1 = 0x00;
-        const byte DATA_1 = 0x00;
-
-        const byte STOP_SPEED = 0x00;
-        const byte HIGH_SPEED = 0x3f;
-        const byte TURBO_SPEED = 0x40;
-
-        const byte TURN_LEFT = 0x04;
-        const byte TURN_RIGHT = 0x02;
-        const byte DRIVE_AHEAD = 0x08;
-        const byte DRIVE_BACK = 0x10;
-    }
-    class CommandsP
-    {
-
-    }
-    class PacketP
-    {
-
-    }
-    class ConstantsD
+    class Constants
     {
         public const byte SYNC = 0xff;
         public const byte ADDR_1 = 0x01; //sterowanie kolami
@@ -50,18 +19,7 @@ namespace Pelco
         public const byte GRASPER_UP = 0x10;
         public const byte GRASPER_DOWN = 0x08;
     }
-    class CommandsD
-    {        
-        public static byte ChecksumCalc(byte pSync, byte pAddress, byte pCommand1, byte pCommand2, byte pData1, byte pData2)
-        {
-            byte checksum;
-            checksum = (byte)(pSync ^ pAddress ^ pCommand1 ^ pCommand2 ^ pData1 ^ pData2);
-            return checksum;
-        }
-
-        
-    }
-    class PacketD
+    class Packet
     {
         public byte Sync { get; set; }
         public byte Address { get; set; }
@@ -71,7 +29,4 @@ namespace Pelco
         public byte Data2 { get; set; }
         public byte Checksum { get; set; }
     }
-
-
-
 }

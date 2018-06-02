@@ -1,15 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-using System.IO;
 using Pelco;
 using Dynamixel;
 using System.IO.Ports;
-using System.Threading;
-using System.Diagnostics;
 
 
 namespace ConsoleApp
@@ -45,8 +39,8 @@ namespace ConsoleApp
         #endregion
 
         public static SerialPort serialPort = new SerialPort(PelcoSerialPort);
-        public static PacketD packet = new PacketD();
-        public static List<PacketD> packets = new List<PacketD>();
+        public static Packet packet = new Packet();
+        public static List<Packet> packets = new List<Packet>();
         public static DateTime dateWheels = DateTime.Now;
         public static DateTime dateGrasper = DateTime.Now;
 
@@ -91,20 +85,46 @@ namespace ConsoleApp
             }
             else
             {
-                Console.Write("Dynamixel" + pID + " has been successfully connected");
+                Console.WriteLine("Dynamixel " + pID + " has been successfully connected");
             }
         }
 
         static void DynamixelEnableWheelMode(byte pID)
         {
-            //todo: rzucanie wyjatkow
+            int Result;
+            byte Error;
+
             DynamixelSDK.write2ByteTxRx(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_CCW_ANGLE_LIMIT_L, DynamixelWheelModeData);
+
+            if ((Result = DynamixelSDK.getLastTxRxResult(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION)) != Dynamixel.Constants.COMM_SUCCESS)
+            {
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.getTxRxResult(DYNAMIXEL_PROTOCOL_VERSION, Result)));
+            }
+            else if ((Error = DynamixelSDK.getLastRxPacketError(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION)) != 0)
+            {
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.getRxPacketError(DYNAMIXEL_PROTOCOL_VERSION, Error)));
+            }
+            else
+            {
+                Console.WriteLine("Dynamixel " + pID + " is in a wheel mode");
+            }
         }
 
         static void DynamixelSetMovingSpeed(byte pID, ushort pMovingSpeed)
         {
-            //todo: rzucanie wyjatkow
+            int Result;
+            byte Error;
+
             DynamixelSDK.write2ByteTxRx(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_MOVING_SPEED, pMovingSpeed);
+
+            if ((Result = DynamixelSDK.getLastTxRxResult(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION)) != Dynamixel.Constants.COMM_SUCCESS)
+            {
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.getTxRxResult(DYNAMIXEL_PROTOCOL_VERSION, Result)));
+            }
+            else if ((Error = DynamixelSDK.getLastRxPacketError(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION)) != 0)
+            {
+                throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.getRxPacketError(DYNAMIXEL_PROTOCOL_VERSION, Error)));
+            }
         }
 
         static void DynamixelDisableTorque(byte pID)
@@ -124,7 +144,7 @@ namespace ConsoleApp
             }
             else
             {
-                Console.WriteLine("Dynamixel has been successfully disconnected");
+                Console.WriteLine("Dynamixel " + pID + " has been successfully disconnected");
             }
         }
 
@@ -135,26 +155,34 @@ namespace ConsoleApp
 
         static void DynamixelStopWheels()
         {
-            DynamixelSetMovingSpeed(Constants.FRONT_RIGHT_WHEEL, 0);
-            DynamixelSetMovingSpeed(Constants.FRONT_LEFT_WHEEL, 0);
-            DynamixelSetMovingSpeed(Constants.REAR_RIGHT_WHEEL, 0);
-            DynamixelSetMovingSpeed(Constants.REAR_LEFT_WHEEL, 0);
+            try
+            {
+                DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_RIGHT_WHEEL, 0);
+                DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_LEFT_WHEEL, 0);
+                DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_RIGHT_WHEEL, 0);
+                DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_LEFT_WHEEL, 0);
+            }
+            catch (Exception)
+            {
+
+                throw new Exception("Stopping wheels failed");
+            }
         }
 
         private static void DynamixelStopGrasper()
         {
-            DynamixelSetMovingSpeed(Constants.RIGHT_ARM, 0);
-            DynamixelSetMovingSpeed(Constants.LEFT_ARM, 0);
-            DynamixelSetMovingSpeed(Constants.TILT_ARM, 0);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, 0);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.LEFT_ARM, 0);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.TILT_ARM, 0);
         }
 
-        private static void DynamixelWriteGoalPosition(byte pID, ushort pGoalPosition)
+        private static void DynamixelSetGoalPosition(byte pID, ushort pGoalPosition)
         {
             int Result;
             byte Error;
 
-            DynamixelSDK.write2ByteTxRx(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION, pID, Constants.ADDR_GOAL_POSITION_L, pGoalPosition);
-            if ((Result = DynamixelSDK.getLastTxRxResult(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION)) != Constants.COMM_SUCCESS)
+            DynamixelSDK.write2ByteTxRx(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_GOAL_POSITION_L, pGoalPosition);
+            if ((Result = DynamixelSDK.getLastTxRxResult(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION)) != Dynamixel.Constants.COMM_SUCCESS)
             {
                 throw new Exception(Marshal.PtrToStringAnsi(DynamixelSDK.getTxRxResult(DYNAMIXEL_PROTOCOL_VERSION, Result)));
             }
@@ -179,8 +207,7 @@ namespace ConsoleApp
 
         static void PelcoOpenPort()
         {
-            serialPort.Open();
-            //todo: rzucanie wyjatkow
+                serialPort.Open();
         }
 
         static void PelcoDataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -234,55 +261,55 @@ namespace ConsoleApp
 
         static void CarMove()
         {
-            //byte Checksum = CommandsD.ChecksumCalc(packets[0].Sync, packets[0].Address, packets[0].Command1, packets[0].Command2, packets[0].Data1, packets[0].Data2);
-
             if (packets.Count > 0)
             {
-                if (packets[0].Sync == ConstantsD.SYNC)
+                if (packets[0].Sync == Pelco.Constants.SYNC)
                 {
-                    if (packets[0].Address == ConstantsD.ADDR_1) //sterowanie kolami
+                    if (packets[0].Address == Pelco.Constants.ADDR_1) //sterowanie kolami
                     {
-                        if (packets[0].Command2 == ConstantsD.DRIVE_AHEAD)
+                        if (packets[0].Command2 == Pelco.Constants.DRIVE_AHEAD)
                         {
                             DynamixelSpeed = SpeedByteToNumberAhead(packets[0].Data2);
                             DynamixelSpeed2 = SpeedByteToNumberBack(packets[0].Data2);
                             CarDriveStraight(DynamixelSpeed, DynamixelSpeed2);
                         }
-                        else if (packets[0].Command2 == ConstantsD.DRIVE_BACK)
+                        else if (packets[0].Command2 == Pelco.Constants.DRIVE_BACK)
                         {
                             DynamixelSpeed2 = SpeedByteToNumberAhead(packets[0].Data2);
                             DynamixelSpeed = SpeedByteToNumberBack(packets[0].Data2);
                             CarDriveStraight(DynamixelSpeed, DynamixelSpeed2);
                         }
-                        else if (packets[0].Command2 == ConstantsD.TURN_RIGHT)
+                        else if (packets[0].Command2 == Pelco.Constants.TURN_RIGHT)
                         {
                             DynamixelSpeed = SpeedByteToNumberAhead(packets[0].Data1);
                             CarTurn(DynamixelSpeed);
                         }
-                        else if (packets[0].Command2 == ConstantsD.TURN_LEFT)
+                        else if (packets[0].Command2 == Pelco.Constants.TURN_LEFT)
                         {
                             DynamixelSpeed = SpeedByteToNumberBack(packets[0].Data1);
                             CarTurn(DynamixelSpeed);
                         }
                         dateWheels = DateTime.Now;
                     }
-                    else if (packets[0].Address == ConstantsD.ADDR_2) //sterowanie chwytakiem
+                    else if (packets[0].Address == Pelco.Constants.ADDR_2) //sterowanie chwytakiem
                     {
-                        if (packets[0].Command2 == ConstantsD.GRASPER_UP)
-                        {
+                        DynamixelSpeed = SpeedByteToNumberAhead(packets[0].Data2);
 
+                        if (packets[0].Command2 == Pelco.Constants.GRASPER_UP)
+                        {
+                            MoveGrasperUp(DynamixelSpeed);
                         }
-                        else if (packets[0].Command2 == ConstantsD.GRASPER_DOWN)
+                        else if (packets[0].Command2 == Pelco.Constants.GRASPER_DOWN)
                         {
-
+                            MoveGrasperDown(DynamixelSpeed);
                         }
-                        else if (packets[0].Command2 == ConstantsD.OPEN_GRASPER)
+                        else if (packets[0].Command2 == Pelco.Constants.OPEN_GRASPER)
                         {
-
+                            GrasperOpen(DynamixelSpeed);
                         }
-                        else if (packets[0].Command2 == ConstantsD.CLOSE_GRASPER)
+                        else if (packets[0].Command2 == Pelco.Constants.CLOSE_GRASPER)
                         {
-
+                            GrasperClose(DynamixelSpeed);
                         }
                         dateGrasper = DateTime.Now;
                     }
@@ -293,11 +320,11 @@ namespace ConsoleApp
 
         static ushort SpeedByteToNumberAhead(byte pSpeed)
         {
-            if (pSpeed == ConstantsD.TURBO_SPEED)
+            if (pSpeed == Pelco.Constants.TURBO_SPEED)
             {
                 return DYNAMIXEL_TURBO_SPEED;
             }
-            else if (pSpeed == ConstantsD.STOP_SPEED)
+            else if (pSpeed == Pelco.Constants.STOP_SPEED)
             {
                 return 0;
             }
@@ -314,11 +341,11 @@ namespace ConsoleApp
 
         static ushort SpeedByteToNumberBack(byte pSpeed)
         {
-            if (pSpeed == ConstantsD.TURBO_SPEED)
+            if (pSpeed == Pelco.Constants.TURBO_SPEED)
             {
                 return DYNAMIXEL_TURBO_SPEED + DYNAMIXEL_BACK_SPEED;
             }
-            else if (pSpeed == ConstantsD.STOP_SPEED)
+            else if (pSpeed == Pelco.Constants.STOP_SPEED)
             {
                 return DYNAMIXEL_STOP_SPEED_BACK;
             }
@@ -335,18 +362,46 @@ namespace ConsoleApp
 
         private static void CarDriveStraight(ushort pSpeedAhead, ushort pSpeedBack)
         {
-            DynamixelSetMovingSpeed(Constants.FRONT_RIGHT_WHEEL, pSpeedAhead);
-            DynamixelSetMovingSpeed(Constants.FRONT_LEFT_WHEEL, pSpeedBack);
-            DynamixelSetMovingSpeed(Constants.REAR_RIGHT_WHEEL, pSpeedAhead);
-            DynamixelSetMovingSpeed(Constants.REAR_LEFT_WHEEL, pSpeedBack);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_RIGHT_WHEEL, pSpeedAhead);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_LEFT_WHEEL, pSpeedBack);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_RIGHT_WHEEL, pSpeedAhead);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_LEFT_WHEEL, pSpeedBack);
         }
 
         private static void CarTurn(ushort pSpeed)
         {
-            DynamixelSetMovingSpeed(Constants.FRONT_RIGHT_WHEEL, pSpeed);
-            DynamixelSetMovingSpeed(Constants.FRONT_LEFT_WHEEL, pSpeed);
-            DynamixelSetMovingSpeed(Constants.REAR_RIGHT_WHEEL, pSpeed);
-            DynamixelSetMovingSpeed(Constants.REAR_LEFT_WHEEL, pSpeed);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_RIGHT_WHEEL, pSpeed);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_LEFT_WHEEL, pSpeed);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_RIGHT_WHEEL, pSpeed);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_LEFT_WHEEL, pSpeed);
+        }
+
+        private static void MoveGrasperUp(ushort pSpeed)
+        {
+            DynamixelSetGoalPosition(Dynamixel.Constants.TILT_ARM, DYNAMIXEL_TILT_ARM_MIN_POSITION);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.TILT_ARM, pSpeed);
+        }
+
+        private static void MoveGrasperDown(ushort pSpeed)
+        {
+            DynamixelSetGoalPosition(Dynamixel.Constants.TILT_ARM, DYNAMIXEL_TILT_ARM_MAX_POSITION);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.TILT_ARM, pSpeed);
+        }
+
+        private static void GrasperOpen(ushort pSpeed)
+        {
+            DynamixelSetGoalPosition(Dynamixel.Constants.RIGHT_ARM, DYNAMIXEL_RIGHT_ARM_MAX_POSITION);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, pSpeed);
+            DynamixelSetGoalPosition(Dynamixel.Constants.LEFT_ARM, DYNAMIXEL_LEFT_ARM_MIN_POSITION);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.LEFT_ARM, pSpeed);
+        }
+
+        private static void GrasperClose(ushort pSpeed)
+        {
+            DynamixelSetGoalPosition(Dynamixel.Constants.RIGHT_ARM, DYNAMIXEL_RIGHT_ARM_MIN_POSITION);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, pSpeed);
+            DynamixelSetGoalPosition(Dynamixel.Constants.LEFT_ARM, DYNAMIXEL_LEFT_ARM_MAX_POSITION);
+            DynamixelSetMovingSpeed(Dynamixel.Constants.LEFT_ARM, pSpeed);
         }
 
         #endregion
@@ -355,18 +410,10 @@ namespace ConsoleApp
         {
             int isBytesToRead = 0;
             TimeSpan timeWheels, timeGrasper;
-            try
-            {
-                DynamixelInitialization();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
 
             try
             {
-                DynamixelOpenPort();
+                DynamixelInitialization();
             }
             catch (Exception ex)
             {
@@ -380,12 +427,31 @@ namespace ConsoleApp
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
+                Environment.Exit(0);
             }
 
-            DynamixelEnableWheelMode(Dynamixel.Constants.FRONT_RIGHT_WHEEL);
-            DynamixelEnableWheelMode(Dynamixel.Constants.FRONT_LEFT_WHEEL);
-            DynamixelEnableWheelMode(Dynamixel.Constants.REAR_RIGHT_WHEEL);
-            DynamixelEnableWheelMode(Dynamixel.Constants.REAR_LEFT_WHEEL);
+            try
+            {
+                DynamixelOpenPort();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Environment.Exit(0);
+            }
+
+            try
+            {
+                DynamixelEnableWheelMode(Dynamixel.Constants.FRONT_RIGHT_WHEEL);
+                DynamixelEnableWheelMode(Dynamixel.Constants.FRONT_LEFT_WHEEL);
+                DynamixelEnableWheelMode(Dynamixel.Constants.REAR_RIGHT_WHEEL);
+                DynamixelEnableWheelMode(Dynamixel.Constants.REAR_LEFT_WHEEL);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Environment.Exit(0);
+            }
 
             try
             {
@@ -400,19 +466,28 @@ namespace ConsoleApp
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
+                Environment.Exit(0);
             }
 
-            DynamixelStopWheels();
+            try
+            {
+                DynamixelStopWheels();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Environment.Exit(0);
+            }
 
             try
             {
                 PelcoInitialization();
                 PelcoOpenPort();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                Console.WriteLine(ex.Message);
+                Environment.Exit(0);
             }
 
             while (true)
@@ -425,6 +500,7 @@ namespace ConsoleApp
                     {
                         DynamixelStopWheels();
                     }
+
                     timeGrasper = DateTime.Now - dateGrasper;
                     if (timeGrasper.Milliseconds > 210)
                     {
@@ -446,16 +522,24 @@ namespace ConsoleApp
                 DynamixelDisableTorque(Dynamixel.Constants.FRONT_LEFT_WHEEL);
                 DynamixelDisableTorque(Dynamixel.Constants.REAR_RIGHT_WHEEL);
                 DynamixelDisableTorque(Dynamixel.Constants.REAR_LEFT_WHEEL);
-
+                DynamixelDisableTorque(Dynamixel.Constants.RIGHT_ARM);
+                DynamixelDisableTorque(Dynamixel.Constants.LEFT_ARM);
+                DynamixelDisableTorque(Dynamixel.Constants.TILT_ARM);
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
 
-            DynamixelClosePort();
-            serialPort.Close();
-
+            try
+            {
+                DynamixelClosePort();
+                serialPort.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
     }
 }

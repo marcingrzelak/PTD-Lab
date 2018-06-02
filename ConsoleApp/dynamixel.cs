@@ -261,7 +261,6 @@ namespace Dynamixel
         public static extern void groupSyncWriteTxPacket(int group_num);
         #endregion
     }
-
     class Constants
     {
         public const byte ADDR_CW_ANGLE_LIMIT_L = 6;
