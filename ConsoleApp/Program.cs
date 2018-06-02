@@ -9,6 +9,7 @@ using Pelco;
 using Dynamixel;
 using System.IO.Ports;
 using System.Threading;
+using System.Diagnostics;
 
 
 namespace ConsoleApp
@@ -18,18 +19,19 @@ namespace ConsoleApp
         #region Settings
         public const byte DYNAMIXEL_PROTOCOL_VERSION = 1;
         public const int DYNAMIXEL_BAUDRATE = 1000000;
-        public const string DYNAMIXEL_DEVICENAME = "COM6";
+        public const string DYNAMIXEL_DEVICENAME = "COM8";
 
         public const int DYNAMIXEL_SPEED_SCALE = 63;
         public const int DYNAMIXEL_MAX_SPEED = 600;
-        public const int DYNAMIXEL_TURBO_SPEED = 1024;
-        public const int DYNAMIXEL_BACK_SPEED = 1234;
+        public const int DYNAMIXEL_TURBO_SPEED = 1023;
+        public const ushort DYNAMIXEL_BACK_SPEED = 1024;
+        public const int DYNAMIXEL_STOP_SPEED_BACK = 1024;
 
         public static int DynamixelPortNum;
         public static ushort DynamixelWheelModeData = 0;
         public static int DynamixelCurrentSpeed = 0;
         public static int DynamixelCurrentDirection = 0;
-        public static ushort DynamixelSpeed;
+        public static ushort DynamixelSpeed, DynamixelSpeed2;
 
         public static string PelcoSerialPort = "COM6";
         public static uint z = 0;
@@ -38,6 +40,8 @@ namespace ConsoleApp
         public static SerialPort serialPort = new SerialPort(PelcoSerialPort);
         public static PacketD packet = new PacketD();
         public static List<PacketD> packets = new List<PacketD>();
+        public static Stopwatch stopwatch = new Stopwatch();
+        public static DateTime date = DateTime.Now;
 
         #region Dynamixel
 
@@ -122,13 +126,21 @@ namespace ConsoleApp
             DynamixelSDK.closePort(DynamixelPortNum);
         }
 
+        static void DynamixelStopWheels()
+        {
+            DynamixelSetMovingSpeed(Constants.FRONT_RIGHT_WHEEL, 0);
+            DynamixelSetMovingSpeed(Constants.FRONT_LEFT_WHEEL, 0);
+            DynamixelSetMovingSpeed(Constants.REAR_RIGHT_WHEEL, 0);
+            DynamixelSetMovingSpeed(Constants.REAR_LEFT_WHEEL, 0);
+        }
+
         #endregion
 
         #region Pelco
 
         static void PelcoInitialization()
         {
-            serialPort.BaudRate = 2400;
+            serialPort.BaudRate = 57600;
             serialPort.Parity = Parity.None;
             serialPort.DataBits = 8;
             serialPort.StopBits = StopBits.One;
@@ -187,13 +199,14 @@ namespace ConsoleApp
                 }
             }
             CarMove();
-            Thread.Sleep(200);
+            //Thread.Sleep(50);
         }
 
         static void CarMove()
         {
-            byte Checksum = CommandsD.ChecksumCalc(packets[0].Sync, packets[0].Address, packets[0].Command1, packets[0].Command2, packets[0].Data1, packets[0].Data2);
-            if (packets[0].Checksum == Checksum)
+            //byte Checksum = CommandsD.ChecksumCalc(packets[0].Sync, packets[0].Address, packets[0].Command1, packets[0].Command2, packets[0].Data1, packets[0].Data2);
+
+            if (packets.Count > 0)
             {
                 if (packets[0].Sync == ConstantsD.SYNC)
                 {
@@ -202,27 +215,29 @@ namespace ConsoleApp
                         if (packets[0].Command2 == ConstantsD.DRIVE_AHEAD)
                         {
                             DynamixelSpeed = SpeedByteToNumberAhead(packets[0].Data2);
-                            CarDriveStraight(DynamixelSpeed);
+                            DynamixelSpeed2 = SpeedByteToNumberBack(packets[0].Data2);
+                            CarDriveStraight(DynamixelSpeed, DynamixelSpeed2);
                         }
                         else if (packets[0].Command2 == ConstantsD.DRIVE_BACK)
                         {
+                            DynamixelSpeed2 = SpeedByteToNumberAhead(packets[0].Data2);
                             DynamixelSpeed = SpeedByteToNumberBack(packets[0].Data2);
-                            CarDriveStraight(DynamixelSpeed);
+                            CarDriveStraight(DynamixelSpeed, DynamixelSpeed2);
                         }
                         else if (packets[0].Command2 == ConstantsD.TURN_RIGHT)
                         {
-                            //predkosc z data1
+                            DynamixelSpeed = SpeedByteToNumberAhead(packets[0].Data1);
+                            CarTurn(DynamixelSpeed);
                         }
                         else if (packets[0].Command2 == ConstantsD.TURN_LEFT)
                         {
-                            //predkosc z data1
+                            DynamixelSpeed = SpeedByteToNumberBack(packets[0].Data1);
+                            CarTurn(DynamixelSpeed);
                         }
+                        date = DateTime.Now;
                     }
                 }
-            }
-            else
-            {
-                //blad obliczania checksumy
+                packets.RemoveAt(0);
             }
         }
 
@@ -255,7 +270,7 @@ namespace ConsoleApp
             }
             else if (pSpeed == ConstantsD.STOP_SPEED)
             {
-                return 0;
+                return DYNAMIXEL_STOP_SPEED_BACK;
             }
             else
             {
@@ -265,10 +280,18 @@ namespace ConsoleApp
                 Speed = (ushort)speed;
 
                 return Speed;
-            }            
+            }
         }
 
-        private static void CarDriveStraight(ushort pSpeed)
+        private static void CarDriveStraight(ushort pSpeedAhead, ushort pSpeedBack)
+        {
+            DynamixelSetMovingSpeed(Constants.FRONT_RIGHT_WHEEL, pSpeedAhead);
+            DynamixelSetMovingSpeed(Constants.FRONT_LEFT_WHEEL, pSpeedBack);
+            DynamixelSetMovingSpeed(Constants.REAR_RIGHT_WHEEL, pSpeedAhead);
+            DynamixelSetMovingSpeed(Constants.REAR_LEFT_WHEEL, pSpeedBack);
+        }
+
+        private static void CarTurn(ushort pSpeed)
         {
             DynamixelSetMovingSpeed(Constants.FRONT_RIGHT_WHEEL, pSpeed);
             DynamixelSetMovingSpeed(Constants.FRONT_LEFT_WHEEL, pSpeed);
@@ -280,6 +303,8 @@ namespace ConsoleApp
 
         static void Main(string[] args)
         {
+            int flag = 0;
+            TimeSpan time;
             try
             {
                 DynamixelInitialization();
@@ -312,11 +337,6 @@ namespace ConsoleApp
             DynamixelEnableWheelMode(Dynamixel.Constants.REAR_RIGHT_WHEEL);
             DynamixelEnableWheelMode(Dynamixel.Constants.REAR_LEFT_WHEEL);
 
-            DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_RIGHT_WHEEL, 300);
-            DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_LEFT_WHEEL, 1324);
-            DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_RIGHT_WHEEL, 300);
-            DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_LEFT_WHEEL, 1324);
-
             try
             {
                 DynamixelEnableTorque(Dynamixel.Constants.FRONT_RIGHT_WHEEL);
@@ -330,12 +350,37 @@ namespace ConsoleApp
                 Console.WriteLine(ex.Message);
             }
 
+            DynamixelStopWheels();
+
+            try
+            {
+                PelcoInitialization();
+                PelcoOpenPort();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
             while (true)
             {
-                serialPort.DataReceived += new SerialDataReceivedEventHandler(PelcoDataReceived);
+                flag = serialPort.BytesToRead;
+                if (flag == 0)
+                {
+                    time = DateTime.Now - date;
+                    if (time.Milliseconds > 210)
+                    {
+                        DynamixelStopWheels();
+                    }
+                }
+                else
+                {
+                    serialPort.DataReceived += new SerialDataReceivedEventHandler(PelcoDataReceived);
+                }
 
-                if (Console.ReadKey().Key == ConsoleKey.Escape)
-                    break;
+                //if (Console.ReadKey().Key == ConsoleKey.Escape)
+                //    break;
             }
 
             try
@@ -352,6 +397,7 @@ namespace ConsoleApp
             }
 
             DynamixelClosePort();
+            serialPort.Close();
 
         }
     }
