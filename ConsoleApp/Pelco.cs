@@ -14,10 +14,10 @@
         public const byte TURN_RIGHT = 0x02;
         public const byte DRIVE_AHEAD = 0x08;
         public const byte DRIVE_BACK = 0x10;
-        public const byte CLOSE_GRASPER = 0x20;
-        public const byte OPEN_GRASPER = 0x40;
-        public const byte GRASPER_UP = 0x10;
-        public const byte GRASPER_DOWN = 0x08;
+        public const byte CLOSE_GRASPER = 0x04;
+        public const byte OPEN_GRASPER = 0x02;
+        public const byte GRASPER_UP = 0x08;
+        public const byte GRASPER_DOWN = 0x10;
     }
     class Packet
     {

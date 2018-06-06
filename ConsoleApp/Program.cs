@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using Pelco;
 using Dynamixel;
 using System.IO.Ports;
-
+using System.Threading;
 
 namespace ConsoleApp
 {
@@ -16,17 +16,18 @@ namespace ConsoleApp
         public const string DYNAMIXEL_DEVICENAME = "COM8";
 
         public const int DYNAMIXEL_SPEED_SCALE = 63;
-        public const int DYNAMIXEL_MAX_SPEED = 600;
+        public const int WHEEL_MAX_SPEED = 600;
+        public const int GRASPER_MAX_SPEED = 300;
         public const int DYNAMIXEL_TURBO_SPEED = 1023;
         public const ushort DYNAMIXEL_BACK_SPEED = 1024;
         public const int DYNAMIXEL_STOP_SPEED_BACK = 1024;
 
-        public const ushort DYNAMIXEL_RIGHT_ARM_MIN_POSITION = 0;
-        public const ushort DYNAMIXEL_RIGHT_ARM_MAX_POSITION = 0;
-        public const ushort DYNAMIXEL_LEFT_ARM_MIN_POSITION = 0;
-        public const ushort DYNAMIXEL_LEFT_ARM_MAX_POSITION = 0;
-        public const ushort DYNAMIXEL_TILT_ARM_MIN_POSITION = 0;
-        public const ushort DYNAMIXEL_TILT_ARM_MAX_POSITION = 0;
+        public const ushort DYNAMIXEL_RIGHT_ARM_MIN_POSITION = 350;
+        public const ushort DYNAMIXEL_RIGHT_ARM_MAX_POSITION = 673;
+        public const ushort DYNAMIXEL_LEFT_ARM_MIN_POSITION = 700;
+        public const ushort DYNAMIXEL_LEFT_ARM_MAX_POSITION = 1023;
+        public const ushort DYNAMIXEL_TILT_ARM_MIN_POSITION = 220;
+        public const ushort DYNAMIXEL_TILT_ARM_MAX_POSITION = 530;
 
         public static int DynamixelPortNum;
         public static ushort DynamixelWheelModeData = 0;
@@ -36,6 +37,12 @@ namespace ConsoleApp
 
         public static string PelcoSerialPort = "COM6";
         public static uint z = 0;
+
+        public static bool IsWheelSterring = false;
+        public static bool IsGrasperSterring = false;
+
+        public static bool IsWheelsStopped = false;
+        public static bool IsGrasperStopped = false;
         #endregion
 
         public static SerialPort serialPort = new SerialPort(PelcoSerialPort);
@@ -192,6 +199,12 @@ namespace ConsoleApp
             }
         }
 
+        private static void DynamixelReadPresentPosition(byte pID)
+        {
+            ushort pos = DynamixelSDK.read2ByteTxRx(DynamixelPortNum, DYNAMIXEL_PROTOCOL_VERSION, pID, Dynamixel.Constants.ADDR_PRESENT_POSITION);
+            Console.WriteLine("[ID: {0}] PresPos: {1}", pID, pos);
+        }
+
         #endregion
 
         #region Pelco
@@ -250,13 +263,14 @@ namespace ConsoleApp
                         packet.Checksum = buffer[i];
                         packets.Add(packet);
                         z = 0;
+                        //Console.WriteLine();
                         break;
                     default:
                         break;
                 }
             }
             CarMove();
-            //Thread.Sleep(50);
+            Thread.Sleep(50);
         }
 
         static void CarMove()
@@ -290,28 +304,35 @@ namespace ConsoleApp
                             CarTurn(DynamixelSpeed);
                         }
                         dateWheels = DateTime.Now;
+                        IsWheelsStopped = false;
+                        IsWheelSterring = true;
+                        IsGrasperSterring = false;
                     }
                     else if (packets[0].Address == Pelco.Constants.ADDR_2) //sterowanie chwytakiem
                     {
-                        DynamixelSpeed = SpeedByteToNumberAhead(packets[0].Data2);
-
                         if (packets[0].Command2 == Pelco.Constants.GRASPER_UP)
                         {
+                            DynamixelSpeed = SpeedByteToNumberGrasper(packets[0].Data2);
                             MoveGrasperUp(DynamixelSpeed);
                         }
                         else if (packets[0].Command2 == Pelco.Constants.GRASPER_DOWN)
                         {
+                            DynamixelSpeed = SpeedByteToNumberGrasper(packets[0].Data2);
                             MoveGrasperDown(DynamixelSpeed);
                         }
                         else if (packets[0].Command2 == Pelco.Constants.OPEN_GRASPER)
                         {
+                            DynamixelSpeed = SpeedByteToNumberGrasper(packets[0].Data1);
                             GrasperOpen(DynamixelSpeed);
                         }
                         else if (packets[0].Command2 == Pelco.Constants.CLOSE_GRASPER)
                         {
+                            DynamixelSpeed = SpeedByteToNumberGrasper(packets[0].Data1);
                             GrasperClose(DynamixelSpeed);
                         }
                         dateGrasper = DateTime.Now;
+                        IsWheelSterring = false;
+                        IsGrasperSterring = true;
                     }
                 }
                 packets.RemoveAt(0);
@@ -332,7 +353,7 @@ namespace ConsoleApp
             {
                 ushort Speed;
                 float speed = float.Parse(pSpeed.ToString());
-                speed = speed / DYNAMIXEL_SPEED_SCALE * DYNAMIXEL_MAX_SPEED;
+                speed = speed / DYNAMIXEL_SPEED_SCALE * WHEEL_MAX_SPEED;
                 Speed = (ushort)speed;
 
                 return Speed;
@@ -353,11 +374,26 @@ namespace ConsoleApp
             {
                 ushort Speed;
                 float speed = float.Parse(pSpeed.ToString());
-                speed = (speed / DYNAMIXEL_SPEED_SCALE * DYNAMIXEL_MAX_SPEED) + DYNAMIXEL_BACK_SPEED;
+                speed = (speed / DYNAMIXEL_SPEED_SCALE * WHEEL_MAX_SPEED) + DYNAMIXEL_BACK_SPEED;
                 Speed = (ushort)speed;
 
                 return Speed;
             }
+        }
+
+        static ushort SpeedByteToNumberGrasper(byte pSpeed)
+        {
+            ushort Speed;
+            float speed = float.Parse(pSpeed.ToString());
+            speed = speed / DYNAMIXEL_SPEED_SCALE * GRASPER_MAX_SPEED;
+            Speed = (ushort)speed;
+
+            if (Speed == 0)
+            {
+                return 1;
+            }
+
+            return Speed;
         }
 
         private static void CarDriveStraight(ushort pSpeedAhead, ushort pSpeedBack)
@@ -392,7 +428,7 @@ namespace ConsoleApp
         {
             DynamixelSetGoalPosition(Dynamixel.Constants.RIGHT_ARM, DYNAMIXEL_RIGHT_ARM_MAX_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, pSpeed);
-            DynamixelSetGoalPosition(Dynamixel.Constants.LEFT_ARM, DYNAMIXEL_LEFT_ARM_MIN_POSITION);
+            DynamixelSetGoalPosition(Dynamixel.Constants.LEFT_ARM, DYNAMIXEL_LEFT_ARM_MAX_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.LEFT_ARM, pSpeed);
         }
 
@@ -400,7 +436,7 @@ namespace ConsoleApp
         {
             DynamixelSetGoalPosition(Dynamixel.Constants.RIGHT_ARM, DYNAMIXEL_RIGHT_ARM_MIN_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, pSpeed);
-            DynamixelSetGoalPosition(Dynamixel.Constants.LEFT_ARM, DYNAMIXEL_LEFT_ARM_MAX_POSITION);
+            DynamixelSetGoalPosition(Dynamixel.Constants.LEFT_ARM, DYNAMIXEL_LEFT_ARM_MIN_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.LEFT_ARM, pSpeed);
         }
 
@@ -496,20 +532,23 @@ namespace ConsoleApp
                 if (isBytesToRead == 0)
                 {
                     timeWheels = DateTime.Now - dateWheels;
-                    if (timeWheels.Milliseconds > 210)
+                    if (timeWheels.Milliseconds > 210 && IsWheelSterring && !IsWheelsStopped)
                     {
                         DynamixelStopWheels();
+                        IsWheelsStopped = true;
                     }
 
                     timeGrasper = DateTime.Now - dateGrasper;
-                    if (timeGrasper.Milliseconds > 210)
+                    if (timeGrasper.Milliseconds > 210 && IsGrasperSterring)
                     {
-                        DynamixelStopGrasper();
+                        //DynamixelStopGrasper();
                     }
+                    //DynamixelReadPresentPosition(5);
                 }
                 else
                 {
                     serialPort.DataReceived += new SerialDataReceivedEventHandler(PelcoDataReceived);
+
                 }
 
                 //if (Console.ReadKey().Key == ConsoleKey.Escape)
