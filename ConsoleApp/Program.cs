@@ -40,9 +40,6 @@ namespace ConsoleApp
 
         public static bool IsWheelSterring = false;
         public static bool IsGrasperSterring = false;
-
-        public static bool IsWheelsStopped = false;
-        public static bool IsGrasperStopped = false;
         #endregion
 
         public static SerialPort serialPort = new SerialPort(PelcoSerialPort);
@@ -220,7 +217,7 @@ namespace ConsoleApp
 
         static void PelcoOpenPort()
         {
-                serialPort.Open();
+            serialPort.Open();
         }
 
         static void PelcoDataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -303,10 +300,6 @@ namespace ConsoleApp
                             DynamixelSpeed = SpeedByteToNumberBack(packets[0].Data1);
                             CarTurn(DynamixelSpeed);
                         }
-                        dateWheels = DateTime.Now;
-                        IsWheelsStopped = false;
-                        IsWheelSterring = true;
-                        IsGrasperSterring = false;
                     }
                     else if (packets[0].Address == Pelco.Constants.ADDR_2) //sterowanie chwytakiem
                     {
@@ -330,9 +323,6 @@ namespace ConsoleApp
                             DynamixelSpeed = SpeedByteToNumberGrasper(packets[0].Data1);
                             GrasperClose(DynamixelSpeed);
                         }
-                        dateGrasper = DateTime.Now;
-                        IsWheelSterring = false;
-                        IsGrasperSterring = true;
                     }
                 }
                 packets.RemoveAt(0);
@@ -398,46 +388,64 @@ namespace ConsoleApp
 
         private static void CarDriveStraight(ushort pSpeedAhead, ushort pSpeedBack)
         {
+            IsWheelSterring = true;
+            IsGrasperSterring = false;
             DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_RIGHT_WHEEL, pSpeedAhead);
             DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_LEFT_WHEEL, pSpeedBack);
             DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_RIGHT_WHEEL, pSpeedAhead);
             DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_LEFT_WHEEL, pSpeedBack);
+            dateWheels = DateTime.Now;
         }
 
         private static void CarTurn(ushort pSpeed)
         {
+            IsWheelSterring = true;
+            IsGrasperSterring = false;
             DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_RIGHT_WHEEL, pSpeed);
             DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_LEFT_WHEEL, pSpeed);
             DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_RIGHT_WHEEL, pSpeed);
             DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_LEFT_WHEEL, pSpeed);
+            dateWheels = DateTime.Now;
         }
 
         private static void MoveGrasperUp(ushort pSpeed)
         {
+            IsWheelSterring = false;
+            IsGrasperSterring = true;
             DynamixelSetGoalPosition(Dynamixel.Constants.TILT_ARM, DYNAMIXEL_TILT_ARM_MIN_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.TILT_ARM, pSpeed);
+            dateGrasper = DateTime.Now;
         }
 
         private static void MoveGrasperDown(ushort pSpeed)
         {
+            IsWheelSterring = false;
+            IsGrasperSterring = true;
             DynamixelSetGoalPosition(Dynamixel.Constants.TILT_ARM, DYNAMIXEL_TILT_ARM_MAX_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.TILT_ARM, pSpeed);
+            dateGrasper = DateTime.Now;
         }
 
         private static void GrasperOpen(ushort pSpeed)
         {
+            IsWheelSterring = false;
+            IsGrasperSterring = true;
             DynamixelSetGoalPosition(Dynamixel.Constants.RIGHT_ARM, DYNAMIXEL_RIGHT_ARM_MAX_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, pSpeed);
             DynamixelSetGoalPosition(Dynamixel.Constants.LEFT_ARM, DYNAMIXEL_LEFT_ARM_MAX_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.LEFT_ARM, pSpeed);
+            dateGrasper = DateTime.Now;
         }
 
         private static void GrasperClose(ushort pSpeed)
         {
+            IsWheelSterring = false;
+            IsGrasperSterring = true;
             DynamixelSetGoalPosition(Dynamixel.Constants.RIGHT_ARM, DYNAMIXEL_RIGHT_ARM_MIN_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, pSpeed);
             DynamixelSetGoalPosition(Dynamixel.Constants.LEFT_ARM, DYNAMIXEL_LEFT_ARM_MIN_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.LEFT_ARM, pSpeed);
+            dateGrasper = DateTime.Now;
         }
 
         #endregion
@@ -526,33 +534,29 @@ namespace ConsoleApp
                 Environment.Exit(0);
             }
 
-            while (true)
+            while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape))
             {
                 isBytesToRead = serialPort.BytesToRead;
                 if (isBytesToRead == 0)
                 {
                     timeWheels = DateTime.Now - dateWheels;
-                    if (timeWheels.Milliseconds > 210 && IsWheelSterring && !IsWheelsStopped)
+                    timeGrasper = DateTime.Now - dateGrasper;
+
+                    if (timeWheels.Milliseconds > 300 && IsWheelSterring)
                     {
                         DynamixelStopWheels();
-                        IsWheelsStopped = true;
                     }
 
-                    timeGrasper = DateTime.Now - dateGrasper;
-                    if (timeGrasper.Milliseconds > 210 && IsGrasperSterring)
+                    if (timeGrasper.Milliseconds > 300 && IsGrasperSterring)
                     {
-                        //DynamixelStopGrasper();
+                        DynamixelStopGrasper();
                     }
-                    //DynamixelReadPresentPosition(5);
                 }
                 else
                 {
                     serialPort.DataReceived += new SerialDataReceivedEventHandler(PelcoDataReceived);
 
                 }
-
-                //if (Console.ReadKey().Key == ConsoleKey.Escape)
-                //    break;
             }
 
             try
