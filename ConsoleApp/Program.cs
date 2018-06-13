@@ -40,6 +40,8 @@ namespace ConsoleApp
 
         public static bool IsWheelSterring = false;
         public static bool IsGrasperSterring = false;
+        public static bool IsWheelStopped = false;
+        public static bool IsGrasperStopped = false;
         #endregion
 
         public static SerialPort serialPort = new SerialPort(PelcoSerialPort);
@@ -157,6 +159,21 @@ namespace ConsoleApp
             DynamixelSDK.closePort(DynamixelPortNum);
         }
 
+        static void DynamixelStopGrasper()
+        {
+            try
+            {
+                DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, 0);
+                DynamixelSetMovingSpeed(Dynamixel.Constants.LEFT_ARM, 0);
+                DynamixelSetMovingSpeed(Dynamixel.Constants.TILT_ARM, 0);
+            }
+            catch (Exception)
+            {
+
+                throw new Exception("Stopping grasper failed");
+            }
+        }
+
         static void DynamixelStopWheels()
         {
             try
@@ -168,16 +185,49 @@ namespace ConsoleApp
             }
             catch (Exception)
             {
-
                 throw new Exception("Stopping wheels failed");
             }
         }
 
-        private static void DynamixelStopGrasper()
+        static void DynamixelStopAll(TimeSpan pTimeWheels, TimeSpan pTimeGrasper)
         {
-            DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, 0);
-            DynamixelSetMovingSpeed(Dynamixel.Constants.LEFT_ARM, 0);
-            DynamixelSetMovingSpeed(Dynamixel.Constants.TILT_ARM, 0);
+            if(IsWheelSterring) //sterowalismy kolami
+            {
+                if (pTimeWheels.Milliseconds > 210 && !IsWheelStopped)
+                {
+                    try
+                    {
+                        DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_RIGHT_WHEEL, 0);
+                        DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_LEFT_WHEEL, 0);
+                        DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_RIGHT_WHEEL, 0);
+                        DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_LEFT_WHEEL, 0);
+                    }
+                    catch (Exception)
+                    {
+                        throw new Exception("Stopping wheels failed");
+                    }
+                    IsWheelStopped = true;
+                }
+            }
+
+            if(IsGrasperSterring) //sterowalismy chwytakiem
+            {
+                if (pTimeGrasper.Milliseconds > 210 && !IsGrasperStopped)
+                {
+                    try
+                    {
+                        DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, 0);
+                        DynamixelSetMovingSpeed(Dynamixel.Constants.LEFT_ARM, 0);
+                        DynamixelSetMovingSpeed(Dynamixel.Constants.TILT_ARM, 0);
+                    }
+                    catch (Exception)
+                    {
+
+                        throw new Exception("Stopping grasper failed");
+                    }
+                    IsGrasperStopped = true;
+                }
+            }            
         }
 
         private static void DynamixelSetGoalPosition(byte pID, ushort pGoalPosition)
@@ -278,6 +328,7 @@ namespace ConsoleApp
                 {
                     if (packets[0].Address == Pelco.Constants.ADDR_1) //sterowanie kolami
                     {
+                        DynamixelStopGrasper();
                         if (packets[0].Command2 == Pelco.Constants.DRIVE_AHEAD)
                         {
                             DynamixelSpeed = SpeedByteToNumberAhead(packets[0].Data2);
@@ -303,6 +354,7 @@ namespace ConsoleApp
                     }
                     else if (packets[0].Address == Pelco.Constants.ADDR_2) //sterowanie chwytakiem
                     {
+                        DynamixelStopWheels();
                         if (packets[0].Command2 == Pelco.Constants.GRASPER_UP)
                         {
                             DynamixelSpeed = SpeedByteToNumberGrasper(packets[0].Data2);
@@ -390,6 +442,7 @@ namespace ConsoleApp
         {
             IsWheelSterring = true;
             IsGrasperSterring = false;
+            IsWheelStopped = false;
             DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_RIGHT_WHEEL, pSpeedAhead);
             DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_LEFT_WHEEL, pSpeedBack);
             DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_RIGHT_WHEEL, pSpeedAhead);
@@ -401,6 +454,7 @@ namespace ConsoleApp
         {
             IsWheelSterring = true;
             IsGrasperSterring = false;
+            IsWheelStopped = false;
             DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_RIGHT_WHEEL, pSpeed);
             DynamixelSetMovingSpeed(Dynamixel.Constants.FRONT_LEFT_WHEEL, pSpeed);
             DynamixelSetMovingSpeed(Dynamixel.Constants.REAR_RIGHT_WHEEL, pSpeed);
@@ -412,6 +466,7 @@ namespace ConsoleApp
         {
             IsWheelSterring = false;
             IsGrasperSterring = true;
+            IsGrasperStopped = false;
             DynamixelSetGoalPosition(Dynamixel.Constants.TILT_ARM, DYNAMIXEL_TILT_ARM_MIN_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.TILT_ARM, pSpeed);
             dateGrasper = DateTime.Now;
@@ -421,6 +476,7 @@ namespace ConsoleApp
         {
             IsWheelSterring = false;
             IsGrasperSterring = true;
+            IsGrasperStopped = false;
             DynamixelSetGoalPosition(Dynamixel.Constants.TILT_ARM, DYNAMIXEL_TILT_ARM_MAX_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.TILT_ARM, pSpeed);
             dateGrasper = DateTime.Now;
@@ -430,6 +486,7 @@ namespace ConsoleApp
         {
             IsWheelSterring = false;
             IsGrasperSterring = true;
+            IsGrasperStopped = false;
             DynamixelSetGoalPosition(Dynamixel.Constants.RIGHT_ARM, DYNAMIXEL_RIGHT_ARM_MAX_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, pSpeed);
             DynamixelSetGoalPosition(Dynamixel.Constants.LEFT_ARM, DYNAMIXEL_LEFT_ARM_MAX_POSITION);
@@ -441,6 +498,7 @@ namespace ConsoleApp
         {
             IsWheelSterring = false;
             IsGrasperSterring = true;
+            IsGrasperStopped = false;
             DynamixelSetGoalPosition(Dynamixel.Constants.RIGHT_ARM, DYNAMIXEL_RIGHT_ARM_MIN_POSITION);
             DynamixelSetMovingSpeed(Dynamixel.Constants.RIGHT_ARM, pSpeed);
             DynamixelSetGoalPosition(Dynamixel.Constants.LEFT_ARM, DYNAMIXEL_LEFT_ARM_MIN_POSITION);
@@ -537,25 +595,16 @@ namespace ConsoleApp
             while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape))
             {
                 isBytesToRead = serialPort.BytesToRead;
+
                 if (isBytesToRead == 0)
                 {
                     timeWheels = DateTime.Now - dateWheels;
                     timeGrasper = DateTime.Now - dateGrasper;
-
-                    if (timeWheels.Milliseconds > 300 && IsWheelSterring)
-                    {
-                        DynamixelStopWheels();
-                    }
-
-                    if (timeGrasper.Milliseconds > 300 && IsGrasperSterring)
-                    {
-                        DynamixelStopGrasper();
-                    }
+                    DynamixelStopAll(timeWheels, timeGrasper);                    
                 }
                 else
                 {
                     serialPort.DataReceived += new SerialDataReceivedEventHandler(PelcoDataReceived);
-
                 }
             }
 
